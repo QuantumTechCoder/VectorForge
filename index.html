@@ -85,6 +85,18 @@
 </div>
 </div>
 <div class="toolbar-sep"></div>
+<button type="button" class="tool-button" id="undoBtn" aria-label="Undo" title="Undo (Ctrl+Z)">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6"/><path d="M3 13a9 9 0 1 0 2.65-6.35L3 9"/></svg>
+<span>Undo</span>
+</button>
+<button type="button" class="tool-button" id="redoBtn" aria-label="Redo" title="Redo (Ctrl+Shift+Z)">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 7v6h-6"/><path d="M21 13a9 9 0 1 1-2.65-6.35L21 9"/></svg>
+<span>Redo</span>
+</button>
+<button type="button" class="tool-button" id="snapToggleBtn" aria-label="Toggle snap to grid" title="Snap control points to grid">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4v16h16"/><path d="M8 4v16"/><path d="M12 4v16"/><path d="M16 4v16"/><path d="M4 8h16"/><path d="M4 12h16"/><path d="M4 16h16"/></svg>
+<span>Snap</span>
+</button>
 <button type="button" class="tool-button is-active" id="toggleHandlesBtn" aria-pressed="true" aria-label="Toggle control point handles">
 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="8" opacity=".55"/></svg>
 <span>Points</span>
@@ -101,6 +113,7 @@
 <div class="stage-shell" id="stageShell">
 <div class="art-stage" id="artStage" tabindex="0" role="application" aria-label="VectorForge live artboard">
 <div class="artboard-host" id="artboardHost"></div>
+<div class="snap-grid" id="snapGrid" aria-hidden="true"></div>
 <div class="point-layer" id="pointLayer"></div>
 <div class="stage-frame" aria-hidden="true"></div>
 </div>
@@ -283,6 +296,29 @@ Reset
 Add point
 </button>
 </div>
+<div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+<button type="button" class="mini-button" id="duplicatePointBtn" aria-label="Duplicate selected point">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+Duplicate
+</button>
+<button type="button" class="mini-button" id="randomizeColorsBtn" aria-label="Randomize mesh colors">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h4"/><path d="M18 12h4"/><path d="M12 2v4"/><path d="M12 18v4"/><circle cx="12" cy="12" r="3"/></svg>
+Randomize colors
+</button>
+</div>
+<div class="control" style="margin-top:12px">
+<div class="control-label">
+<span>Mesh softness</span>
+<span class="value-chip" id="softnessValue">45%</span>
+</div>
+<input class="range" type="range" id="softnessRange" min="0" max="100" step="1" value="45" aria-label="Mesh softness">
+</div>
+<div class="color-line-row">
+<span class="label">Snap to grid</span>
+<div class="color-control">
+<button type="button" class="mini-button" id="snapGridBtn" aria-label="Toggle snap to grid">Off</button>
+</div>
+</div>
 </div>
 </div>
 <div class="panel-scroll export-panel" id="exportPanel" role="tabpanel" hidden>
@@ -357,6 +393,21 @@ Add point
 Download SVG
 </button>
 </div>
+<div class="export-actions" style="margin-top:8px">
+<button type="button" class="btn btn-ghost" id="copyJsonBtn" aria-label="Copy composition JSON">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3h8l4 4v14H8z"/><path d="M16 3v4h4"/></svg>
+Copy JSON
+</button>
+<button type="button" class="btn btn-ghost" id="copyDataUriBtn" aria-label="Copy SVG data URI">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+Copy data URI
+</button>
+<button type="button" class="btn btn-ghost" id="importJsonBtn" aria-label="Import composition JSON">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m6 9 6 6 6-6"/><path d="M5 21h14"/></svg>
+Import JSON
+</button>
+</div>
+<input type="file" id="importJsonInput" accept="application/json" hidden>
 <div class="export-footnote">
 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
 Generated locally in your browser. Nothing is uploaded.

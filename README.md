@@ -1,29 +1,92 @@
 ﻿# VectorForge
 
-**VectorForge** is an offline-first, browser-based SVG divider and mesh gradient factory for developers. It runs entirely in the browser with no build step, no server, and no npm installation.
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-vectorforge.pages.dev-22d3ee?style=for-the-badge&logo=cloudflarepages&logoColor=white)](https://vectorforge.pages.dev)
+[![Source Code](https://img.shields.io/badge/Source%20Code-GitHub-8b5cf6?style=for-the-badge&logo=github&logoColor=white)](https://github.com/QuantumTechCoder/VectorForge)
+[![Offline First](https://img.shields.io/badge/Offline-First-5eead4?style=for-the-badge)](https://github.com/QuantumTechCoder/VectorForge)
+[![License: MIT](https://img.shields.io/badge/License-MIT-fbbf24?style=for-the-badge)](LICENSE)
 
-Design rich aurora-style mesh gradients, sculpt wave dividers, drag color control points, switch between polished presets, and export production-ready SVG, Tailwind markup, or inline CSS in one click.
+> A browser-based SVG divider and mesh gradient factory for developers.  
+> No build step. No server. No npm. Just open and create.
 
-![VectorForge preview](https://img.shields.io/badge/status-production--ready-8b5cf6?style=for-the-badge)
-![Offline first](https://img.shields.io/badge/offline-first-22d3ee?style=for-the-badge)
-![Single file](https://img.shields.io/badge/single-file-html-5eead4?style=for-the-badge)
+VectorForge lets you design rich mesh gradients, sculpt wave dividers, drag color control points, switch between polished presets, and export production-ready **SVG**, **Tailwind markup**, or **inline CSS** in one click.
+
+## Table of Contents
+
+- [Live Demo](#live-demo)
+- [Features](#features)
+- [Quick Start](#quick-start)
+- [Project Structure](#project-structure)
+- [Controls](#controls)
+- [Keyboard Shortcuts](#keyboard-shortcuts)
+- [Export Formats](#export-formats)
+- [Composition JSON](#composition-json)
+- [Browser Support](#browser-support)
+- [Offline-First](#offline-first)
+- [Contributing](#contributing)
+- [License](#license)
+
+## Live Demo
+
+Launch VectorForge instantly:
+
+**https://vectorforge.pages.dev**
+
+## Source Code
+
+The complete source code is available here:
+
+**https://github.com/QuantumTechCoder/VectorForge**
 
 ## Features
 
-- **Live workspace canvas** with an adjustable SVG artboard and multiple aspect ratios.
-- **SVG wave and divider generator** with frequency, amplitude, layers, curve smoothness, opacity, tint, and top/bottom blend toggles.
-- **Complex mesh gradient engine** with draggable color control points, color picking, influence sizing, add/remove actions, and keyboard nudging.
-- **Real-time export panel** for raw SVG, Tailwind utility markup, and inline CSS, each with copy-to-clipboard support.
-- **Six curated presets** including Sleek Aurora, Ocean Waves, Tech Grid Mesh, Sunset Dunes, Neon Horizon, and Mint Glass.
-- **Local persistence** using browser storage, so compositions survive reloads.
-- **Responsive interface** with desktop, tablet, and mobile layouts.
+### Visual Engine
+
+- Live SVG workspace with adjustable aspect ratios: `16:9`, `4:3`, `1:1`, `3:2`, and `21:9`
+- Mesh gradient engine with draggable color control points
+- Smooth color blending with vignette, blur, and layered gradients
+- Wave divider generator with frequency, amplitude, layers, opacity, tint, and smoothness
+- Top and bottom section blending toggles
+- Snap-to-grid editing for precise point placement
+- Mesh softness control for subtle or dramatic blends
+- Six curated presets: **Sleek Aurora**, **Ocean Waves**, **Tech Grid Mesh**, **Sunset Dunes**, **Neon Horizon**, and **Mint Glass**
+
+### Editing Workflow
+
+- Add, duplicate, remove, and randomize control points
+- Randomize entire mesh color palettes
+- Undo and redo with keyboard support
+- Local persistence using browser storage
+- Responsive desktop, tablet, and mobile layouts
+
+### Export
+
+- Raw SVG with gradients, filters, vignette, and wave paths
+- Tailwind utility markup with arbitrary aspect ratio
+- Inline CSS with framework-free markup
+- SVG data URI export
+- Composition JSON import and export
+- Copy-to-clipboard support for every format
 
 ## Quick Start
 
-1. Open `index.html` in any modern browser.
-2. Choose a preset or start from the default composition.
-3. Drag control points, tune wave settings, and adjust colors.
-4. Open the **Export** tab and copy the format you need.
+### Use the website
+
+Open the live app:
+
+```text
+https://vectorforge.pages.dev
+```
+
+### Run locally
+
+1. Clone the repository:
+
+```bash
+git clone https://github.com/QuantumTechCoder/VectorForge.git
+cd VectorForge
+```
+
+2. Open `index.html` in any modern browser.
 
 No installation is required. Tailwind is loaded from its CDN, and all application logic lives in `app.js`.
 
@@ -43,18 +106,54 @@ VectorForge/
 |---|---|
 | Move a control point | Drag it on the canvas |
 | Add a control point | Double-click the canvas or use **Add point** |
-| Nudge a point | Focus a point and use arrow keys |
+| Duplicate a point | Select it, then click **Duplicate** |
 | Remove a point | Select it, then click the trash icon |
+| Randomize colors | Click **Randomize colors** |
+| Nudge a point | Focus a point and use arrow keys |
 | Change aspect ratio | Use the frame buttons in the toolbar |
 | Copy export code | Open **Export** and click any **Copy** button |
+| Import a composition | Open **Export** and click **Import JSON** |
+
+## Keyboard Shortcuts
+
+| Shortcut | Action |
+|---|---|
+| `Ctrl/Cmd + Z` | Undo |
+| `Ctrl/Cmd + Shift + Z` or `Ctrl/Cmd + Y` | Redo |
+| `Arrow Keys` | Nudge selected point by 1% |
+| `Shift + Arrow Keys` | Nudge selected point by 5% |
+| `Delete` or `Backspace` | Remove selected point |
 
 ## Export Formats
 
-- **Raw SVG** — Complete vector artwork with gradients, blur, vignette, and wave paths.
-- **Tailwind utility markup** — A drop-in section using Tailwind classes plus an inline mesh background.
-- **Inline CSS** — A framework-free element with all styles written inline.
+### Raw SVG
+
+Complete vector artwork with mesh gradients, blur, vignette, and wave paths.
+
+### Tailwind Utility Markup
+
+A drop-in section using Tailwind classes plus an inline mesh background.
+
+### Inline CSS
+
+A framework-free element with all styles written inline.
+
+### SVG Data URI
+
+A copy-ready `data:image/svg+xml` URI for embedding anywhere.
 
 All generated code is self-contained and can be pasted directly into another project.
+
+## Composition JSON
+
+VectorForge can export and import full compositions as JSON, including:
+
+- Canvas ratio and background color
+- Mesh control points, colors, positions, and influence
+- Wave frequency, amplitude, layers, smoothness, opacity, tint, and blend toggles
+- Snap and softness settings
+
+This makes it easy to version, share, or restore exact designs.
 
 ## Browser Support
 
@@ -63,6 +162,17 @@ VectorForge works in current versions of Chrome, Edge, Firefox, and Safari. Clip
 ## Offline-First
 
 VectorForge does not send data to a server. Compositions are stored locally in the browser, and exports are generated on demand.
+
+## Contributing
+
+Contributions are welcome. To contribute:
+
+1. Fork the repository.
+2. Create a feature branch.
+3. Make your changes.
+4. Open a pull request.
+
+Please keep the project dependency-free and single-file friendly where possible.
 
 ## License
 

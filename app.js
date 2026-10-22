@@ -24,11 +24,15 @@ compositionMeta:document.getElementById("compositionMeta"),
 ratioGroup:document.getElementById("ratioGroup"),
 toggleHandlesBtn:document.getElementById("toggleHandlesBtn"),
 addPointTopBtn:document.getElementById("addPointTopBtn"),
+undoBtn:document.getElementById("undoBtn"),
+redoBtn:document.getElementById("redoBtn"),
+snapToggleBtn:document.getElementById("snapToggleBtn"),
 canvasViewport:document.getElementById("canvasViewport"),
 stageShell:document.getElementById("stageShell"),
 artStage:document.getElementById("artStage"),
 artboardHost:document.getElementById("artboardHost"),
 pointLayer:document.getElementById("pointLayer"),
+snapGrid:document.getElementById("snapGrid"),
 footerPoints:document.getElementById("footerPoints"),
 footerLayers:document.getElementById("footerLayers"),
 canvasDimensions:document.getElementById("canvasDimensions"),
@@ -70,7 +74,16 @@ pointY:document.getElementById("pointY"),
 pointsGrid:document.getElementById("pointsGrid"),
 pointCount:document.getElementById("pointCount"),
 addPointBtn:document.getElementById("addPointBtn"),
+duplicatePointBtn:document.getElementById("duplicatePointBtn"),
+randomizeColorsBtn:document.getElementById("randomizeColorsBtn"),
+softnessRange:document.getElementById("softnessRange"),
+softnessValue:document.getElementById("softnessValue"),
+snapGridBtn:document.getElementById("snapGridBtn"),
 exportFormatList:document.getElementById("exportFormatList"),
+copyJsonBtn:document.getElementById("copyJsonBtn"),
+copyDataUriBtn:document.getElementById("copyDataUriBtn"),
+importJsonBtn:document.getElementById("importJsonBtn"),
+importJsonInput:document.getElementById("importJsonInput"),
 exportCode:document.getElementById("exportCode"),
 codeFilename:document.getElementById("codeFilename"),
 codeMeta:document.getElementById("codeMeta"),
@@ -92,6 +105,9 @@ let exportRefreshTimer = null;
 let persistTimer = null;
 let toastTimer = null;
 let ignoreHandleClickUntil = 0;
+let historyStack = [];
+let historyIndex = -1;
+let historyLock = false;
 function clamp(v,min,max){return Math.max(min,Math.min(max,v))}
 function finite(v,f){const n=Number(v);return Number.isFinite(n)?n:f}
 function round(v,d=0){const f=10**d;return Math.round(v*f)/f}
@@ -129,7 +145,9 @@ ratio:preset.ratio,width:dims.w,height:dims.h,
 background:sanitizeHex(preset.background)||"#05070d",
 mesh:preset.mesh.map((p,i)=>createPoint(p.x,p.y,p.color,p.spread)),
 wave:normalizeWave(preset.wave),
-presetId:preset.id
+presetId:preset.id,
+snap:false,
+softness:45
 };
 }
 function normalizeState(raw){
@@ -142,9 +160,11 @@ try{
  const presetId=PRESETS.some(p=>p.id===raw.presetId)?raw.presetId:null;
  return {
  ratio,width:dims.w,height:dims.h,
- background:sanitizeHex(raw.background)||"#05070d",
- mesh,wave:normalizeWave(raw.wave),presetId
- };
+background:sanitizeHex(raw.background)||"#05070d",
+mesh,wave:normalizeWave(raw.wave),presetId,
+snap:Boolean(raw.snap),
+softness:clamp(finite(raw.softness,45),0,100)
+};
 }catch(e){return null}
 }
 function restoreState(){
@@ -171,6 +191,98 @@ function schedulePersist(){
 }
 function activePreset(){return PRESETS.find(p=>p.id===state.presetId)||null}
 function markCustom(){if(state.presetId!==null) state.presetId=null}
+function pushHistory(){
+ if(historyLock) return;
+ const snap={state:JSON.parse(JSON.stringify(state)),selectedPointId};
+ historyStack=historyStack.slice(0,historyIndex+1);
+ historyStack.push(snap);
+ historyIndex=historyStack.length-1;
+ if(historyStack.length>60){historyStack.shift();historyIndex=Math.max(0,historyIndex-1)}
+ updateHistoryButtons();
+}
+function updateHistoryButtons(){
+ if(els.undoBtn) els.undoBtn.disabled=historyIndex<=0;
+ if(els.redoBtn) els.redoBtn.disabled=historyIndex>=historyStack.length-1;
+}
+function applySnapshot(snap){
+ historyLock=true;
+ state=normalizeState(snap.state);
+ if(!state.mesh.some(p=>p.id===snap.selectedPointId)) selectedPointId=state.mesh[0].id;
+ else selectedPointId=snap.selectedPointId;
+ renderPreview();
+ renderHandles();
+ renderPointChips();
+ syncControls();
+ updateHeaderMeta();
+ updatePresetActiveState();
+ if(activePanel==="export") updateExportPanel();
+ fitStage();
+ historyLock=false;
+ showToast("Restored");
+}
+function undo(){if(historyIndex<=0) return; historyIndex--; applySnapshot(historyStack[historyIndex])}
+function redo(){if(historyIndex>=historyStack.length-1) return; historyIndex++; applySnapshot(historyStack[historyIndex])}
+function duplicateSelectedPoint(){
+ if(state.mesh.length>=MAX_POINTS){showToast("Maximum of "+MAX_POINTS+" control points","error");return}
+ const sp=state.mesh.find(p=>p.id===selectedPointId);
+ if(!sp) return;
+ const np=createPoint(clamp(sp.x+.06,.02,.98),clamp(sp.y+.06,.02,.98),sp.color,sp.spread);
+ state.mesh.push(np);
+ selectedPointId=np.id;
+ markCustom();
+ renderPreview();
+ renderHandles();
+ renderPointChips();
+ syncControls();
+ updateHeaderMeta();
+ updatePresetActiveState();
+ if(activePanel==="export") updateExportPanel();
+ fitStage();
+ schedulePersist();
+ pushHistory();
+ showToast("Point duplicated");
+}
+function randomizeColors(){
+ state.mesh.forEach((p,i)=>{p.color=POINT_COLORS[(i+Math.floor(Math.random()*POINT_COLORS.length))%POINT_COLORS.length]});
+ markCustom();
+ renderPreview();
+ renderHandles();
+ renderPointChips();
+ syncControls();
+ updateHeaderMeta();
+ updatePresetActiveState();
+ if(activePanel==="export") updateExportPanel();
+ schedulePersist();
+ pushHistory();
+ showToast("Colors randomized");
+}
+function importComposition(event){
+ const file=event.target.files&&event.target.files[0];
+ if(!file) return;
+ const reader=new FileReader();
+ reader.onload=()=>{
+ try{
+ const parsed=JSON.parse(reader.result);
+ const normalized=normalizeState(parsed&&parsed.version===1&&parsed.data?parsed.data:parsed);
+ if(!normalized){showToast("Invalid composition JSON","error");return}
+ state=normalized;
+ selectedPointId=state.mesh[0].id;
+ renderPreview();
+ renderHandles();
+ renderPointChips();
+ syncControls();
+ updateHeaderMeta();
+ updatePresetActiveState();
+ if(activePanel==="export") updateExportPanel();
+ fitStage();
+ schedulePersist();
+ pushHistory();
+ showToast("Composition imported");
+ }catch(e){showToast("Import failed","error")}
+ };
+ reader.readAsText(file);
+ event.target.value="";
+}
 function fitStage(){
  const rect=els.canvasViewport.getBoundingClientRect();
  if(rect.width<2||rect.height<2) return;
@@ -286,8 +398,8 @@ function generateSvg(options){
  options=options||{};
  const preview=!!options.preview;
  const w=state.width,h=state.height;
- const maxDim=Math.max(w,h);
- const blur=round(maxDim*.045,1);
+const maxDim=Math.max(w,h);
+const blur=round(maxDim*(.012+state.softness/100*.08),1);
  const pointGradients=state.mesh.map((p,i)=>'    <radialGradient id="vf-mesh-'+(i+1)+'" cx="50%" cy="50%" r="50%">\n      <stop offset="0%" stop-color="'+p.color+'" stop-opacity="0.94"/>\n      <stop offset="52%" stop-color="'+p.color+'" stop-opacity="0.52"/>\n      <stop offset="100%" stop-color="'+p.color+'" stop-opacity="0"/>\n    </radialGradient>').join("\n");
  const filter='    <filter id="vf-soften" x="-30%" y="-30%" width="160%" height="160%">\n      <feGaussianBlur stdDeviation="'+blur+'"/>\n    </filter>';
  const vignette='    <radialGradient id="vf-vignette" cx="50%" cy="38%" r="78%">\n      <stop offset="40%" stop-color="#000000" stop-opacity="0"/>\n      <stop offset="100%" stop-color="#000000" stop-opacity="0.58"/>\n    </radialGradient>';
@@ -520,8 +632,19 @@ function syncControls(){
  chip.classList.toggle("is-active",!!p&&p.id===selectedPointId);
  });
  [els.waveFrequency,els.waveAmplitude,els.waveSmoothness,els.waveOpacity,els.pointSpread].forEach(setRangeProgress);
- els.toggleHandlesBtn.classList.toggle("is-active",handlesVisible);
- els.toggleHandlesBtn.setAttribute("aria-pressed",String(handlesVisible));
+els.toggleHandlesBtn.classList.toggle("is-active",handlesVisible);
+els.toggleHandlesBtn.setAttribute("aria-pressed",String(handlesVisible));
+els.artStage.classList.toggle("is-snap",state.snap);
+if(els.snapGrid) els.snapGrid.classList.toggle("is-visible",state.snap);
+if(els.snapToggleBtn){
+ els.snapToggleBtn.classList.toggle("is-active",state.snap);
+ els.snapToggleBtn.setAttribute("aria-pressed",String(state.snap));
+}
+if(els.snapGridBtn) els.snapGridBtn.textContent=state.snap?"On":"Off";
+if(els.softnessRange) els.softnessRange.value=state.softness;
+if(els.softnessValue) els.softnessValue.textContent=round(state.softness,0)+"%";
+[els.softnessRange].filter(Boolean).forEach(setRangeProgress);
+updateHistoryButtons();
 }
 function renderPointChips(){
  els.pointsGrid.innerHTML=state.mesh.map((p,i)=>{
@@ -571,6 +694,7 @@ function loadPreset(id){
  if(activePanel==="export") updateExportPanel();
  fitStage();
  schedulePersist();
+ pushHistory();
  showToast(preset.name+" loaded");
 }
 function addPoint(x,y,color){
@@ -590,6 +714,7 @@ function addPoint(x,y,color){
  if(activePanel==="export") updateExportPanel();
  fitStage();
  schedulePersist();
+ pushHistory();
  showToast("Control point added");
 }
 function removeSelectedPoint(){
@@ -607,6 +732,7 @@ function removeSelectedPoint(){
  updatePresetActiveState();
  if(activePanel==="export") updateExportPanel();
  schedulePersist();
+ pushHistory();
  showToast("Control point removed");
 }
 function remixComposition(){
@@ -632,6 +758,7 @@ function remixComposition(){
  if(activePanel==="export") updateExportPanel();
  fitStage();
  schedulePersist();
+ pushHistory();
  showToast("Composition remixed");
 }
 function handleStageDoubleClick(event){
@@ -664,8 +791,10 @@ h.setAttribute("aria-pressed",String(h.dataset.handleId===point.id));
 function movePointDrag(event){
  if(!dragSession||event.pointerId!==dragSession.pointerId) return;
  event.preventDefault();
- const x=clamp((event.clientX-dragSession.rect.left)/dragSession.rect.width,.02,.98);
- const y=clamp((event.clientY-dragSession.rect.top)/dragSession.rect.height,.02,.98);
+const xRaw=clamp((event.clientX-dragSession.rect.left)/dragSession.rect.width,.02,.98);
+const yRaw=clamp((event.clientY-dragSession.rect.top)/dragSession.rect.height,.02,.98);
+const x=state.snap?clamp(Math.round(xRaw/.05)*.05,.02,.98):xRaw;
+const y=state.snap?clamp(Math.round(yRaw/.05)*.05,.02,.98):yRaw;
  const point=state.mesh.find(p=>p.id===dragSession.pointId);
  if(!point) return;
  if(!dragSession.moved&&(Math.abs(x-point.x)>.003||Math.abs(y-point.y)>.003)) dragSession.moved=true;
@@ -701,6 +830,7 @@ function endPointDrag(event){
  updatePresetActiveState();
  if(activePanel==="export") updateExportPanel();
  schedulePersist();
+ pushHistory();
  renderHandles();
  }else{
  els.pointLayer.querySelectorAll(".mesh-handle").forEach(handle=>{
@@ -822,8 +952,8 @@ function bindEvents(){
  els.pointColor.addEventListener("input",()=>{const p=state.mesh.find(x=>x.id===selectedPointId);if(!p)return;p.color=els.pointColor.value;applyChange({handles:true})});
  els.pointHex.addEventListener("change",()=>{const p=state.mesh.find(x=>x.id===selectedPointId);if(!p)return;const h=sanitizeHex(els.pointHex.value);if(h){p.color=h;applyChange({handles:true})}else{syncControls()}});
  els.pointSpread.addEventListener("input",()=>{const p=state.mesh.find(x=>x.id===selectedPointId);if(!p)return;p.spread=parseFloat(els.pointSpread.value);applyChange({handles:true})});
- els.pointX.addEventListener("change",()=>{const p=state.mesh.find(x=>x.id===selectedPointId);if(!p)return;const v=clamp(parseFloat(els.pointX.value)/100,.02,.98);if(Number.isFinite(v)){p.x=v;applyChange({handles:true})}else{syncControls()}});
- els.pointY.addEventListener("change",()=>{const p=state.mesh.find(x=>x.id===selectedPointId);if(!p)return;const v=clamp(parseFloat(els.pointY.value)/100,.02,.98);if(Number.isFinite(v)){p.y=v;applyChange({handles:true})}else{syncControls()}});
+els.pointX.addEventListener("change",()=>{const p=state.mesh.find(x=>x.id===selectedPointId);if(!p)return;let v=parseFloat(els.pointX.value)/100;if(state.snap)v=Math.round(v/.05)*.05;v=clamp(v,.02,.98);if(Number.isFinite(v)){p.x=v;applyChange({handles:true});pushHistory()}else{syncControls()}});
+els.pointY.addEventListener("change",()=>{const p=state.mesh.find(x=>x.id===selectedPointId);if(!p)return;let v=parseFloat(els.pointY.value)/100;if(state.snap)v=Math.round(v/.05)*.05;v=clamp(v,.02,.98);if(Number.isFinite(v)){p.y=v;applyChange({handles:true});pushHistory()}else{syncControls()}});
  els.removePointBtn.addEventListener("click",removeSelectedPoint);
  els.pointsGrid.addEventListener("click",event=>{
  const chip=event.target.closest(".point-chip");
@@ -863,7 +993,64 @@ function bindEvents(){
  setTimeout(()=>URL.revokeObjectURL(url),1200);
  showToast("SVG downloaded");
  });
- const resizeObserver=new ResizeObserver(()=>fitStage());
+ els.undoBtn.addEventListener("click",undo);
+els.redoBtn.addEventListener("click",redo);
+els.snapToggleBtn.addEventListener("click",()=>{
+ state.snap=!state.snap;
+ els.artStage.classList.toggle("is-snap",state.snap);
+ applyChange({handles:false});
+ pushHistory();
+});
+els.duplicatePointBtn.addEventListener("click",duplicateSelectedPoint);
+els.randomizeColorsBtn.addEventListener("click",randomizeColors);
+els.softnessRange.addEventListener("input",()=>{state.softness=parseFloat(els.softnessRange.value);applyChange({handles:false})});
+els.softnessRange.addEventListener("change",pushHistory);
+els.snapGridBtn.addEventListener("click",()=>{
+ state.snap=!state.snap;
+ els.artStage.classList.toggle("is-snap",state.snap);
+ applyChange({handles:false});
+ pushHistory();
+});
+els.copyJsonBtn.addEventListener("click",async()=>{
+ await copyText(JSON.stringify(serializeState(),null,2));
+ markCopied(els.copyJsonBtn);
+ showToast("Composition JSON copied");
+});
+els.copyDataUriBtn.addEventListener("click",async()=>{
+ await copyText("data:image/svg+xml;charset=utf-8,"+encodeURIComponent(generateSvg({})));
+ markCopied(els.copyDataUriBtn);
+ showToast("SVG data URI copied");
+});
+els.importJsonBtn.addEventListener("click",()=>els.importJsonInput.click());
+els.importJsonInput.addEventListener("change",importComposition);
+els.blendTop.addEventListener("change",()=>{state.wave.top=els.blendTop.checked;applyChange({handles:false});pushHistory()});
+els.blendBottom.addEventListener("change",()=>{state.wave.bottom=els.blendBottom.checked;applyChange({handles:false});pushHistory()});
+els.waveFrequency.addEventListener("change",pushHistory);
+els.waveAmplitude.addEventListener("change",pushHistory);
+els.waveSmoothness.addEventListener("change",pushHistory);
+els.waveOpacity.addEventListener("change",pushHistory);
+els.waveTint.addEventListener("change",pushHistory);
+els.waveTintHex.addEventListener("change",()=>{const h=sanitizeHex(els.waveTintHex.value);if(h){state.wave.tint=h;applyChange({handles:false});pushHistory()}else{syncControls()}});
+els.baseColor.addEventListener("change",pushHistory);
+els.baseHex.addEventListener("change",()=>{const h=sanitizeHex(els.baseHex.value);if(h){state.background=h;applyChange({handles:false});pushHistory()}else{syncControls()}});
+els.pointColor.addEventListener("change",pushHistory);
+els.pointHex.addEventListener("change",()=>{const p=state.mesh.find(x=>x.id===selectedPointId);if(!p)return;const h=sanitizeHex(els.pointHex.value);if(h){p.color=h;applyChange({handles:true});pushHistory()}else{syncControls()}});
+els.pointSpread.addEventListener("change",pushHistory);
+window.addEventListener("keydown",event=>{
+ const active=document.activeElement;
+ const typing=active&&(active.tagName==="INPUT"||active.tagName==="TEXTAREA");
+ if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==="z"&&!event.shiftKey){
+ event.preventDefault();undo();return;
+ }
+ if((event.ctrlKey||event.metaKey)&&(event.key.toLowerCase()==="y"||(event.key.toLowerCase()==="z"&&event.shiftKey))){
+ event.preventDefault();redo();return;
+ }
+ if(!typing&&(event.key==="Delete"||event.key==="Backspace")){
+ const p=state.mesh.find(x=>x.id===selectedPointId);
+ if(p){event.preventDefault();removeSelectedPoint()}
+ }
+});
+const resizeObserver=new ResizeObserver(()=>fitStage());
  resizeObserver.observe(els.canvasViewport);
  window.addEventListener("resize",fitStage);
 }
@@ -886,5 +1073,6 @@ updateHeaderMeta();
 updatePresetActiveState();
 fitStage();
 requestAnimationFrame(fitStage);
+pushHistory();
 schedulePersist();
 })();
