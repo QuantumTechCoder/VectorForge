@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#05070d">
+<title>VectorForge — Mesh & Divider Studio</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="app-shell">
+<header class="topbar">
+<div class="brand-block">
+<div class="logo-mark" aria-hidden="true">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+<path d="M3 15c3 0 3.8-6 6.8-6s4 6 7 6 3-2 4.2-2"/>
+<path d="M3 19c3 0 3.8-6 6.8-6s4 6 7 6 3-2 4.2-2" opacity=".5"/>
+<circle cx="7.2" cy="9" r="1.05" fill="currentColor" stroke="none" opacity=".9"/>
+<circle cx="16.8" cy="15" r="1.05" fill="currentColor" stroke="none" opacity=".9"/>
+</svg>
+</div>
+<div>
+<div class="brand-name">VectorForge<span class="brand-version">01</span></div>
+<p class="brand-tagline">Offline mesh & divider studio</p>
+</div>
+</div>
+<div class="topbar-center">
+<span class="badge-pill"><span class="status-dot"></span>Local-first workspace</span>
+<span class="badge-pill badge-pill--muted">No build required</span>
+<div class="save-state" id="saveStatus" data-state="saved">
+<span class="save-dot"></span>
+<span id="saveStatusText">Saved locally</span>
+</div>
+</div>
+<div class="topbar-actions">
+<button type="button" class="btn btn-ghost" id="remixBtn" aria-label="Remix composition">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3h5v5"/><path d="M4 20 21 3"/><path d="M21 16v5h-5"/><path d="m15 15 6 6"/><path d="m4 4 5 5"/></svg>
+<span class="btn-label">Remix</span>
+</button>
+<button type="button" class="btn btn-primary" id="exportTopBtn" aria-label="Open export panel">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"/><path d="M7 7h10v10"/></svg>
+<span class="btn-label">Export</span>
+</button>
+</div>
+</header>
+<main class="app-grid">
+<aside class="presets-panel">
+<div class="sidebar-head">
+<span class="eyebrow">Presets</span>
+<h2>Curated starting points</h2>
+<p>Click any template to instantly load its mesh, waves, and palette.</p>
+<div class="sidebar-count"><span class="dot"></span>06 art-directed compositions</div>
+</div>
+<div class="presets-rail-label">
+<span class="rail-count">06</span>
+<span class="rail-text">Curated<br>presets</span>
+</div>
+<div class="preset-scroll">
+<div id="presetList" role="listbox" aria-label="Preset templates"></div>
+</div>
+<div class="sidebar-foot">
+<div class="foot-line"><span class="dot"></span>Offline workspace</div>
+<p class="foot-sub">Compositions persist in this browser. Nothing is uploaded.</p>
+</div>
+</aside>
+<section class="workspace">
+<div class="canvas-toolbar">
+<div class="canvas-title-group">
+<span class="eyebrow">Live canvas</span>
+<div class="canvas-title-line">
+<h2 id="compositionName">Custom composition</h2>
+<span class="meta-chip" id="compositionMeta">4 points · 3 layers</span>
+</div>
+</div>
+<div class="toolbar-right">
+<div class="toolbar-block">
+<span class="toolbar-label">Frame</span>
+<div class="ratio-switch" id="ratioGroup" role="group" aria-label="Canvas aspect ratio">
+<button type="button" data-ratio="16:9" aria-pressed="false">16:9</button>
+<button type="button" data-ratio="4:3" aria-pressed="false">4:3</button>
+<button type="button" data-ratio="1:1" aria-pressed="false">1:1</button>
+<button type="button" data-ratio="3:2" aria-pressed="false">3:2</button>
+<button type="button" data-ratio="21:9" aria-pressed="false">21:9</button>
+</div>
+</div>
+<div class="toolbar-sep"></div>
+<button type="button" class="tool-button is-active" id="toggleHandlesBtn" aria-pressed="true" aria-label="Toggle control point handles">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="8" opacity=".55"/></svg>
+<span>Points</span>
+</button>
+<button type="button" class="icon-button" id="addPointTopBtn" aria-label="Add control point">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+</button>
+</div>
+</div>
+<div class="canvas-viewport" id="canvasViewport">
+<div class="viewport-orb viewport-orb-a"></div>
+<div class="viewport-orb viewport-orb-b"></div>
+<div class="stage-fit">
+<div class="stage-shell" id="stageShell">
+<div class="art-stage" id="artStage" tabindex="0" role="application" aria-label="VectorForge live artboard">
+<div class="artboard-host" id="artboardHost"></div>
+<div class="point-layer" id="pointLayer"></div>
+<div class="stage-frame" aria-hidden="true"></div>
+</div>
+</div>
+</div>
+<div class="canvas-hud">
+<kbd>Double-click</kbd> canvas to cast a point
+</div>
+</div>
+<footer class="workspace-footer">
+<div class="footer-hint">
+<span class="keycap">DRAG</span><span>shape a point</span><span class="sep"></span>
+<span class="keycap">DOUBLE CLICK</span><span>add a point</span><span class="sep"></span>
+<span class="keycap">ARROWS</span><span>nudge 1%</span>
+</div>
+<div class="footer-stats">
+<span id="footerPoints">4 points</span><span class="dot"></span>
+<span id="footerLayers">3 layers</span><span class="dot"></span>
+<span id="canvasDimensions">1200 × 675</span>
+</div>
+</footer>
+</section>
+<aside class="inspector">
+<div class="panel-tabs" role="tablist" aria-label="Inspector panels">
+<button type="button" class="panel-tab is-active" id="designTab" role="tab" aria-selected="true" aria-controls="designPanel" data-panel="design">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21v-7"/><path d="M4 10V3"/><path d="M12 21v-9"/><path d="M12 8V3"/><path d="M20 21v-5"/><path d="M20 12V3"/><path d="M1 14h6"/><path d="M9 8h6"/><path d="M17 16h6"/></svg>
+<span>Design</span>
+</button>
+<button type="button" class="panel-tab" id="exportTab" role="tab" aria-selected="false" aria-controls="exportPanel" data-panel="export">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"/><path d="M7 7h10v10"/><path d="M3 21h18"/></svg>
+<span>Export</span>
+</button>
+</div>
+<div class="panel-scroll" id="designPanel" role="tabpanel">
+<div class="panel-intro">
+<div>
+<h2>Fine-tune</h2>
+<p>Every control is live. Drag points on the canvas or edit values here.</p>
+</div>
+<button type="button" class="reset-link" id="resetBtn" aria-label="Reset to selected preset">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>
+Reset
+</button>
+</div>
+<div class="control-card">
+<div class="card-heading">
+<div class="icon-tile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12c2.5 0 3.5-4 6-4s3.5 8 6 8 3.5-4 6-4"/></svg></div>
+<div>
+<h3>Wave divider</h3>
+<p>Frequency, depth, layers, and curve smoothness.</p>
+</div>
+<span class="card-index">01</span>
+</div>
+<div class="toggle-grid">
+<label class="toggle-card" id="blendTopCard" for="blendTop">
+<input type="checkbox" id="blendTop">
+<div class="toggle-copy">
+<strong>Top blend</strong>
+<span>Wave section from top</span>
+</div>
+<div class="switch" aria-hidden="true"></div>
+</label>
+<label class="toggle-card" id="blendBottomCard" for="blendBottom">
+<input type="checkbox" id="blendBottom">
+<div class="toggle-copy">
+<strong>Bottom blend</strong>
+<span>Wave section from base</span>
+</div>
+<div class="switch" aria-hidden="true"></div>
+</label>
+</div>
+<div class="control">
+<div class="control-label">
+<span>Frequency</span>
+<span class="value-chip" id="waveFrequencyValue">3.4×</span>
+</div>
+<input class="range" type="range" id="waveFrequency" min="0.5" max="8" step="0.1" value="3.4" aria-label="Wave frequency">
+</div>
+<div class="control">
+<div class="control-label">
+<span>Amplitude</span>
+<span class="value-chip" id="waveAmplitudeValue">15%</span>
+</div>
+<input class="range" type="range" id="waveAmplitude" min="0" max="28" step="0.5" value="15" aria-label="Wave amplitude">
+</div>
+<div class="control">
+<div class="control-label">
+<span>Layers</span>
+<div class="row-actions">
+<div class="stepper">
+<button type="button" id="layersMinus" aria-label="Decrease layers">−</button>
+<output id="layersValue">3</output>
+<button type="button" id="layersPlus" aria-label="Increase layers">+</button>
+</div>
+</div>
+</div>
+</div>
+<div class="control">
+<div class="control-label">
+<span>Curve smoothness</span>
+<span class="value-chip" id="waveSmoothnessValue">88%</span>
+</div>
+<input class="range" type="range" id="waveSmoothness" min="0" max="100" step="1" value="88" aria-label="Curve smoothness">
+</div>
+<div class="control">
+<div class="control-label">
+<span>Section opacity</span>
+<span class="value-chip" id="waveOpacityValue">76%</span>
+</div>
+<input class="range" type="range" id="waveOpacity" min="20" max="100" step="1" value="76" aria-label="Section opacity">
+</div>
+<div class="color-line-row">
+<span class="label">Section tint</span>
+<div class="color-control">
+<div class="color-picker"><input type="color" id="waveTint" value="#07162e" aria-label="Wave tint color"><div class="color-dot" id="waveTintDot"></div></div>
+<input class="hex-input" id="waveTintHex" type="text" value="#07162e" spellcheck="false" aria-label="Wave tint hex color">
+</div>
+</div>
+</div>
+<div class="control-card">
+<div class="card-heading">
+<div class="icon-tile cyan"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="7" cy="8" r="3"/><circle cx="17" cy="16" r="3"/><path d="M9.5 9.6 14.5 14.4" opacity=".55"/></svg></div>
+<div>
+<h3>Mesh gradient</h3>
+<p>Drag control points, tune colors and influence.</p>
+</div>
+<span class="card-index">02</span>
+</div>
+<div class="color-field">
+<div class="color-swatch">
+<input type="color" id="baseColor" value="#040812" aria-label="Base background color">
+<div class="swatch-fill" id="baseColorSwatch"></div>
+</div>
+<div class="color-field-body">
+<strong>Canvas base</strong>
+<input class="hex-input" id="baseHex" type="text" value="#040812" spellcheck="false" aria-label="Base hex color">
+</div>
+</div>
+<div class="selected-point-head">
+<span class="eyebrow">Selected point <span id="selectedPointNumber">01</span></span>
+<button type="button" class="remove-point-btn" id="removePointBtn" aria-label="Remove selected point">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="m6 6 1 14h10l1-14"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+</button>
+</div>
+<div class="color-field">
+<div class="color-swatch">
+<input type="color" id="pointColor" value="#7c3aed" aria-label="Selected point color">
+<div class="swatch-fill" id="pointColorSwatch"></div>
+</div>
+<div class="color-field-body">
+<strong>Point color</strong>
+<input class="hex-input" id="pointHex" type="text" value="#7c3aed" spellcheck="false" aria-label="Selected point hex color">
+</div>
+</div>
+<div class="control">
+<div class="control-label">
+<span>Influence</span>
+<span class="value-chip" id="pointSpreadValue">72%</span>
+</div>
+<input class="range" type="range" id="pointSpread" min="20" max="100" step="1" value="72" aria-label="Point influence">
+</div>
+<div class="field-grid">
+<div class="mini-field">
+<label for="pointX">X position</label>
+<input class="mini-input" id="pointX" type="number" min="0" max="100" step="1" value="18" aria-label="Point X position">
+</div>
+<div class="mini-field">
+<label for="pointY">Y position</label>
+<input class="mini-input" id="pointY" type="number" min="0" max="100" step="1" value="22" aria-label="Point Y position">
+</div>
+</div>
+<div class="points-head">
+<span>All points</span>
+<span id="pointCount">4 points</span>
+</div>
+<div class="point-grid" id="pointsGrid" role="list" aria-label="Mesh control points"></div>
+<div style="display:flex;justify-content:flex-end;margin-top:12px">
+<button type="button" class="add-point-button" id="addPointBtn" aria-label="Add control point">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+Add point
+</button>
+</div>
+</div>
+</div>
+<div class="panel-scroll export-panel" id="exportPanel" role="tabpanel" hidden>
+<div class="export-head">
+<h2>Ready to ship</h2>
+<p>Self-contained output. No dependencies, no build step.</p>
+</div>
+<div class="export-formats" id="exportFormatList">
+<div class="export-format is-active" data-format-row="svg">
+<button type="button" class="export-format-main" data-format-select="svg" aria-label="Select raw SVG">
+<span class="export-format-icon">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m8 6-4 6 4 6"/><path d="m16 6 4 6-4 6"/><path d="M14 4 10 20"/></svg>
+</span>
+<div class="export-format-copy">
+<strong>Raw SVG</strong>
+<span>Full vector source, defs, mesh, waves</span>
+</div>
+</button>
+<button type="button" class="export-copy-btn" data-copy-format="svg" aria-label="Copy raw SVG code">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+<span>Copy</span>
+</button>
+</div>
+<div class="export-format" data-format-row="tailwind">
+<button type="button" class="export-format-main" data-format-select="tailwind" aria-label="Select Tailwind markup">
+<span class="export-format-icon">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M3 12h18"/><path d="M3 18h18"/><path d="M7 4v4"/><path d="M17 10v4"/><path d="M11 16v4"/></svg>
+</span>
+<div class="export-format-copy">
+<strong>Tailwind utility markup</strong>
+<span>Drop-in section with arbitrary aspect</span>
+</div>
+</button>
+<button type="button" class="export-copy-btn" data-copy-format="tailwind" aria-label="Copy Tailwind markup">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+<span>Copy</span>
+</button>
+</div>
+<div class="export-format" data-format-row="css">
+<button type="button" class="export-format-main" data-format-select="css" aria-label="Select inline CSS">
+<span class="export-format-icon">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3 6 21"/><path d="M18 3 16 21"/><path d="M4 8h17"/><path d="M3 16h17"/></svg>
+</span>
+<div class="export-format-copy">
+<strong>Inline CSS</strong>
+<span>Framework-free markup with styles</span>
+</div>
+</button>
+<button type="button" class="export-copy-btn" data-copy-format="css" aria-label="Copy inline CSS markup">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+<span>Copy</span>
+</button>
+</div>
+</div>
+<div class="code-panel">
+<div class="code-bar">
+<div class="code-bar-left">
+<div class="code-dots" aria-hidden="true"><span></span><span></span><span></span></div>
+<span class="code-file" id="codeFilename">vectorforge.svg</span>
+</div>
+<span class="code-meta" id="codeMeta">SVG · 0 chars</span>
+</div>
+<pre class="code-view" id="exportCode" tabindex="0"></pre>
+</div>
+<div class="export-actions">
+<button type="button" class="btn btn-primary" id="copyActiveBtn" aria-label="Copy active export format">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+<span id="copyActiveLabel">Copy SVG code</span>
+</button>
+<button type="button" class="btn btn-ghost" id="downloadSvgBtn" aria-label="Download SVG file">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m6 9 6 6 6-6"/><path d="M5 21h14"/></svg>
+Download SVG
+</button>
+</div>
+<div class="export-footnote">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+Generated locally in your browser. Nothing is uploaded.
+</div>
+</div>
+</aside>
+</main>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+<span id="toastText">Copied to clipboard</span>
+</div>
+<script src="app.js"></script>
+</body>
+</html>
