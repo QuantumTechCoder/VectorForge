@@ -174,6 +174,11 @@ Contributions are welcome. To contribute:
 
 Please keep the project dependency-free and single-file friendly where possible.
 
+
+## Disclosure
+
+Minor parts of this project have been created with assistance of AI. All the core logic, mechanism, and visual design/creative design/ UI-UX have been made by humans. AI assistance has only been used for optimizing the app.js, and for adding comments in the code for better readability.
+
 ## License
 
 MIT
