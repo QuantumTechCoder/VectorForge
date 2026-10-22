@@ -172,8 +172,6 @@ Contributions are welcome. To contribute:
 3. Make your changes.
 4. Open a pull request.
 
-Please keep the project dependency-free and single-file friendly where possible.
-
 
 ## Disclosure
 
