@@ -1,6 +1,6 @@
 ﻿# VectorForge
 
-[![Live Demo](https://img.shields.io/badge/Live%20Demo-vectorforge.pages.dev-22d3ee?style=for-the-badge&logo=cloudflarepages&logoColor=white)](https://vectorforge.pages.dev)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-meshvectorforge.pages.dev-22d3ee?style=for-the-badge&logo=cloudflarepages&logoColor=white)](https://meshvectorforge.pages.dev)
 [![Source Code](https://img.shields.io/badge/Source%20Code-GitHub-8b5cf6?style=for-the-badge&logo=github&logoColor=white)](https://github.com/QuantumTechCoder/VectorForge)
 [![Offline First](https://img.shields.io/badge/Offline-First-5eead4?style=for-the-badge)](https://github.com/QuantumTechCoder/VectorForge)
 [![License: MIT](https://img.shields.io/badge/License-MIT-fbbf24?style=for-the-badge)](LICENSE)
@@ -29,7 +29,7 @@ VectorForge lets you design rich mesh gradients, sculpt wave dividers, drag colo
 
 Launch VectorForge instantly:
 
-**https://vectorforge.pages.dev**
+**https://meshvectorforge.pages.dev**
 
 ## Source Code
 
@@ -74,7 +74,7 @@ The complete source code is available here:
 Open the live app:
 
 ```text
-https://vectorforge.pages.dev
+https://meshvectorforge.pages.dev
 ```
 
 ### Run locally
